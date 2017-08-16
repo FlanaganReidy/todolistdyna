@@ -93,7 +93,7 @@ app.post('/', function (req,res){
 })
 app.post('/:id', function(req,res){
   let id = parseInt(req.params.id);
-  theList.forEach( (listItem) =>{
+  theList.forEach( function(listItem){
     if(id === listItem.id){
       listItem.done = true;
     }
