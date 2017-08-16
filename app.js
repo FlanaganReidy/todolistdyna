@@ -78,7 +78,7 @@ app.post('/', function (req,res){
   const newesttodo = req.body.newestitem;
   let max = 0;
   for (var i = 0; i < theList.length; i++) {
-    if(max < theList[1].id) {
+    if(max < theList[i].id) {
       max = theList[i].id;
     }
   }
@@ -88,11 +88,13 @@ app.post('/', function (req,res){
     done: false,
     id: max + 1
   }
+  console.log(max);
   theList.push(todo);
   res.redirect('/')
 })
 app.post('/:id', function(req,res){
   let id = parseInt(req.params.id);
+
   theList.forEach( function(listItem){
     if(id === listItem.id){
       listItem.done = true;
