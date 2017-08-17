@@ -7,6 +7,9 @@
 </head>
 
 <body>
+  {{#errors}}
+    <p>{{errors}}</p>
+  {{/errors}}
   <form class="" action="/" method="post">
     <input type="text" name="newestitem" value="">
     <button type="submit" name="submit">Add new Todo</button>
@@ -25,8 +28,8 @@
       {{#done}}
       <li>{{text}}</li>
       {{/done}}
+    {{/items}}
   </ul>
-  {{/items}}
 </body>
 
 </html>

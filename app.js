@@ -13,7 +13,11 @@ app.set('views', './views');
 app.set('view engine', 'mustache')
 
 
-  let theList = [{
+  let theList = {
+
+    'errors': false,
+
+    items : [{
       'text': "Learn Node basics",
       'done': true,
       'id':1
@@ -69,38 +73,42 @@ app.set('view engine', 'mustache')
       'id':11
     }
   ]
+}
 
 app.get('/', function (req,res){
-  res.render('todolist', {items:theList});
+  res.render('todolist', theList);
 })
 
-app.post('/', function (req,res){
+app.post('/', function(req, res) {
   const newesttodo = req.body.newestitem;
-  let max = 0;
-  for (var i = 0; i < theList.length; i++) {
-    if(max < theList[i].id) {
-      max = theList[i].id;
+  req.checkBody("newestitem").notEmpty();
+  let newErrors = req.validationErrors();
+  if (newErrors) {
+    theList.errors = "You need to at least type something!"
+    res.render('todolist', theList);
+  } else {
+    let max = theList.items.length;
+    theList.errors = false;
+
+    console.log(newesttodo);
+    let todo = {
+      text: newesttodo,
+      done: false,
+      id: max + 1
     }
+    theList.items.push(todo);
+    res.redirect('/')
   }
-  console.log(newesttodo);
-  let todo = {
-    text: newesttodo,
-    done: false,
-    id: max + 1
-  }
-  console.log(max);
-  theList.push(todo);
-  res.redirect('/')
 })
 app.post('/:id', function(req,res){
   let id = parseInt(req.params.id);
 
-  theList.forEach( function(listItem){
+  theList.items.forEach( function(listItem){
     if(id === listItem.id){
       listItem.done = true;
     }
   })
-  res.render('todolist', {items: theList});
+  res.render('todolist', theList);
 })
 
 app.listen(3000, function(){
