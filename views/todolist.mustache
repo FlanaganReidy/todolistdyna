@@ -8,7 +8,7 @@
 
 <body>
   {{#errors}}
-    <p>{{errors}}</p>
+    <p>{{message}}</p>
   {{/errors}}
   <form class="" action="/" method="post">
     <input type="text" name="newestitem" value="">
@@ -16,7 +16,7 @@
   </form>
   {{#items}}
     {{^done}}
-      <form class="" action="/{{id}}" method="post">
+      <form class="" action="/{{_id}}" method="post">
         <button type="submit" name="button">Completed?</button>
         <label for="button">{{text}}</label>
       </form>

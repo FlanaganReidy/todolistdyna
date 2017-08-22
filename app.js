@@ -2,10 +2,16 @@ const express = require('express');
 const mustacheExpress = require('mustache-express');
 const bodyParser = require('body-parser');
 const expressValidator = require('express-validator');
+const MongoClient = require('mongodb').MongoClient,
+  assert = require('assert');
+const ObjectId = require('mongodb').ObjectID;
+
 
 let app = express();
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
 app.use(expressValidator())
 
 app.engine('mustache', mustacheExpress());
@@ -13,104 +19,82 @@ app.set('views', './views');
 app.set('view engine', 'mustache')
 
 
-  let theList = {
 
-    'errors': false,
+const url = 'mongodb://localhost:27017/todo'
 
-    items : [{
-      'text': "Learn Node basics",
-      'done': true,
-      'id':1
-    },
-    {
-      'text': "Learn Express basics",
-      'done': true,
-      'id':2
-    },
-    {
-      'text': "Learn Mustache",
-      'done': true,
-      'id':3,
-    },
-    {
-      'text': "Learn HTML forms with Express",
-      'done': false,
-      'id':4
-    },
-    {
-      'text': "Learn about authentication",
-      'done': false,
-      'id':5
-    },
-    {
-      'text': "Learn how to connect to PostgreSQL",
-      'done': false,
-      'id':6
-    },
-    {
-      'text': "Learn how to create databases",
-      'done': false,
-      'id':7
-    },
-    {
-      'text': "Learn how to create databases",
-      'done': false,
-      'id':8
-    },
-    {
-      'text': "Learn SQL",
-      'done': false,
-      'id':9
-    },
-    {
-      'text': "Learn how to connect to PostgreSQL from Node",
-      'done': false,
-      'id':10
-    },
-    {
-      'text': "Learn how to use Sequelize",
-      'done': false,
-      'id':11
-    }
-  ]
-}
+let database;
 
-app.get('/', function (req,res){
-  res.render('todolist', theList);
+
+MongoClient.connect(url, function(err, db) {
+  assert.equal(null, err);
+  console.log('Connected Successfullly to mongodb');
+  database = db;
+});
+
+
+app.get('/', function(req, res) {
+
+  let findTodos = function(db, callback) {
+    // Get the documents collection
+    let collection = db.collection('todos');
+    // Find some documents
+    collection.find({}).toArray(function(err, todos) {
+      assert.equal(err, null);
+      console.log("Found the following records");
+      console.log(todos)
+      res.render('todolist', {
+        items: todos
+      });
+    });
+  }
+  findTodos(database);
 })
 
 app.post('/', function(req, res) {
+
   const newesttodo = req.body.newestitem;
-  req.checkBody("newestitem").notEmpty();
-  let newErrors = req.validationErrors();
-  if (newErrors) {
-    theList.errors = "You need to at least type something!"
-    res.render('todolist', theList);
-  } else {
-    let max = theList.items.length;
-    theList.errors = false;
-
-    console.log(newesttodo);
-    let todo = {
-      text: newesttodo,
-      done: false,
-      id: max + 1
-    }
-    theList.items.push(todo);
-    res.redirect('/')
-  }
-})
-app.post('/:id', function(req,res){
-  let id = parseInt(req.params.id);
-
-  theList.items.forEach( function(listItem){
-    if(id === listItem.id){
-      listItem.done = true;
-    }
+    let collection = database.collection('todos');
+    collection.insertOne({
+    'text': newesttodo,
+    'done': false,
+    'new':true
+  }, function(err,result) {
+    console.log("this is the result" + result);
+    collection.find({}).toArray(function(err, todos) {
+      assert.equal(err, null);
+      console.log("Found the following records" + todos.length);
+      res.render('todolist', {
+        items: todos
+      });
+    });
   })
-  res.render('todolist', theList);
+})
+app.post('/:id', function(req, res) {
+  let id = req.params.id;
+  console.log("we\'re in the post the id is" + id);
+  let collection = database.collection('todos');
+  collection.updateOne({_id: new ObjectId(id)}, {$set: {done: true}}, function(err,result) {
+    console.log("this is the result" + result);
+    collection.find({}).toArray(function(err, todos) {
+      assert.equal(err, null);
+      console.log("Found the following records" + todos.length);
+      res.render('todolist', {
+        items: todos
+      });
+    });
+  });
+
 })
 
-app.listen(3000, function(){
+
+app.listen(3000, function() {
   console.log('successfully started Express Application');
 })
+
+process.on('SIGINT', function() {
+  console.log("\nshutting down");
+  database.close(function() {
+    console.log('mongodb disconnectd on app termination');
+    process.exit(0);
+  });
+});
